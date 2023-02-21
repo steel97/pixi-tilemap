@@ -33,5 +33,5 @@ jobs:
     - name: Lint
       run: yarn lint
     - name: Unit testing
-      xvfb-run -a yarn unit-test
+      run: xvfb-run -a yarn unit-test
       
