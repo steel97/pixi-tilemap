@@ -32,6 +32,8 @@ jobs:
       run: yarn build
     - name: Lint
       run: yarn lint
+    - name: electron test
+      run: xvfb-run -a ./node_modules/electron/dist/electron ./node_modules/floss/lib/main "{\"path\":\"test\",\"debug\":false,\"quiet\":false,\"args\":[\"--no-sandbox\"],\"electron\":\"./node_modules/electron/dist/electron\"}" --no-sandbox
     - name: Unit testing
       run: xvfb-run -a yarn unit-test
       
