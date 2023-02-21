@@ -16,7 +16,7 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [16.x]
+        node-version: [14.x]
 
     steps:
     - uses: actions/checkout@v2
@@ -31,5 +31,5 @@ jobs:
     - name: Lint
       run: yarn lint
     - name: Unit testing
-      run: xvfb-run -e /dev/stdout -a yarn unit-test
+      run: xvfb-run --error-file=/dev/stdout --auto-servernum -a yarn unit-test
       
