@@ -28,7 +28,7 @@ function requireRpgMaker() {
             if (!buf) {
                 buf = this.canvasBuffer = document.createElement('canvas');
 
-                (canvasRenderer.constructor ).registerPlugin('tilemap', PIXI.tilemap.CanvasTileRenderer);
+                PIXI.tilemap.CanvasTileRenderer.registerExtension();
                 tempRender = this._tempRender = new (canvasRenderer.constructor )({width: 100, height: 100, view: buf});
                 tempRender.context = tempRender.rootContext;
                 tempRender.plugins.tilemap.dontUseTransform = true;
@@ -96,7 +96,7 @@ function requireRpgMaker() {
 
     if (PIXI.CanvasRenderer)
     {
-        PIXI.CanvasRenderer.registerPlugin('tilemap', PIXI.tilemap.CanvasTileRenderer);
+        PIXI.tilemap.CanvasTileRenderer.registerExtension();
     }
 
     /**
@@ -105,79 +105,72 @@ function requireRpgMaker() {
      * @class Tilemap
      * @constructor
      */
-    function Tilemap() {
-        this.initialize.apply(this, arguments);
-    }
+    class Tilemap extends PIXI.Container {
+        constructor() {
+            super();
+            this._margin = 20;
+            this._width = Graphics.width + this._margin * 2;
+            this._height = Graphics.height + this._margin * 2;
+            this._tileWidth = 48;
+            this._tileHeight = 48;
+            this._mapWidth = 0;
+            this._mapHeight = 0;
+            this._mapData = null;
+            this._layerWidth = 0;
+            this._layerHeight = 0;
+            this._lastTiles = [];
 
-    Tilemap.prototype = Object.create(PIXI.Container.prototype);
-    Tilemap.prototype.constructor = Tilemap;
+            /**
+             * The bitmaps used as a tileset.
+             *
+             * @property bitmaps
+             * @type Array
+             */
+            this.bitmaps = [];
 
-    Tilemap.prototype.initialize = function() {
-        PIXI.Container.call(this);
+            /**
+             * The origin point of the tilemap for scrolling.
+             *
+             * @property origin
+             * @type Point
+             */
+            this.origin = new Point();
 
-        this._margin = 20;
-        this._width = Graphics.width + this._margin * 2;
-        this._height = Graphics.height + this._margin * 2;
-        this._tileWidth = 48;
-        this._tileHeight = 48;
-        this._mapWidth = 0;
-        this._mapHeight = 0;
-        this._mapData = null;
-        this._layerWidth = 0;
-        this._layerHeight = 0;
-        this._lastTiles = [];
+            /**
+             * The tileset flags.
+             *
+             * @property flags
+             * @type Array
+             */
+            this.flags = [];
 
-        /**
-         * The bitmaps used as a tileset.
-         *
-         * @property bitmaps
-         * @type Array
-         */
-        this.bitmaps = [];
+            /**
+             * The animation count for autotiles.
+             *
+             * @property animationCount
+             * @type Number
+             */
+            this.animationCount = 0;
 
-        /**
-         * The origin point of the tilemap for scrolling.
-         *
-         * @property origin
-         * @type Point
-         */
-        this.origin = new Point();
+            /**
+             * Whether the tilemap loops horizontal.
+             *
+             * @property horizontalWrap
+             * @type Boolean
+             */
+            this.horizontalWrap = false;
 
-        /**
-         * The tileset flags.
-         *
-         * @property flags
-         * @type Array
-         */
-        this.flags = [];
-
-        /**
-         * The animation count for autotiles.
-         *
-         * @property animationCount
-         * @type Number
-         */
-        this.animationCount = 0;
-
-        /**
-         * Whether the tilemap loops horizontal.
-         *
-         * @property horizontalWrap
-         * @type Boolean
-         */
-        this.horizontalWrap = false;
-
-        /**
-         * Whether the tilemap loops vertical.
-         *
-         * @property verticalWrap
-         * @type Boolean
-         */
-        this.verticalWrap = false;
-
-        this._createLayers();
-        this.refresh();
-    };
+            /**
+             * Whether the tilemap loops vertical.
+             *
+             * @property verticalWrap
+             * @type Boolean
+             */
+            this.verticalWrap = false;
+            
+            this._createLayers();
+            this.refresh();
+        };
 
     /**
      * The width of the screen in pixels.
@@ -185,17 +178,15 @@ function requireRpgMaker() {
      * @property width
      * @type Number
      */
-    Object.defineProperty(Tilemap.prototype, 'width', {
-        get: function() {
-            return this._width;
-        },
-        set: function(value) {
-            if (this._width !== value) {
-                this._width = value;
-                this._createLayers();
-            }
+    get width() {
+        return this._width;
+    }
+    set width(value) {
+        if (this._width !== value) {
+            this._width = value;
+            this._createLayers();
         }
-    });
+    }
 
     /**
      * The height of the screen in pixels.
@@ -203,17 +194,15 @@ function requireRpgMaker() {
      * @property height
      * @type Number
      */
-    Object.defineProperty(Tilemap.prototype, 'height', {
-        get: function() {
-            return this._height;
-        },
-        set: function(value) {
-            if (this._height !== value) {
-                this._height = value;
-                this._createLayers();
-            }
+    get height() {
+        return this._height;
+    }
+    set height(value) {
+        if (this._height !== value) {
+            this._height = value;
+            this._createLayers();
         }
-    });
+    }
 
     /**
      * The width of a tile in pixels.
@@ -221,17 +210,15 @@ function requireRpgMaker() {
      * @property tileWidth
      * @type Number
      */
-    Object.defineProperty(Tilemap.prototype, 'tileWidth', {
-        get: function() {
-            return this._tileWidth;
-        },
-        set: function(value) {
-            if (this._tileWidth !== value) {
-                this._tileWidth = value;
-                this._createLayers();
-            }
+    get tileWidth() {
+        return this._tileWidth;
+    }
+    set tileWidth(value) {
+        if (this._tileWidth !== value) {
+            this._tileWidth = value;
+            this._createLayers();
         }
-    });
+    }
 
     /**
      * The height of a tile in pixels.
@@ -239,17 +226,15 @@ function requireRpgMaker() {
      * @property tileHeight
      * @type Number
      */
-    Object.defineProperty(Tilemap.prototype, 'tileHeight', {
-        get: function() {
-            return this._tileHeight;
-        },
-        set: function(value) {
-            if (this._tileHeight !== value) {
-                this._tileHeight = value;
-                this._createLayers();
-            }
+    get tileHeight() {
+        return this._tileHeight;
+    }
+    set tileHeight(value) {
+        if (this._tileHeight !== value) {
+            this._tileHeight = value;
+            this._createLayers();
         }
-    });
+    }
 
     /**
      * Sets the tilemap data.
@@ -259,11 +244,11 @@ function requireRpgMaker() {
      * @param {Number} height The height of the map in number of tiles
      * @param {Array} data The one dimensional array for the map data
      */
-    Tilemap.prototype.setData = function(width, height, data) {
+    setData(width, height, data) {
         this._mapWidth = width;
         this._mapHeight = height;
         this._mapData = data;
-    };
+    }
 
     /**
      * Checks whether the tileset is ready to render.
@@ -272,21 +257,21 @@ function requireRpgMaker() {
      * @type Boolean
      * @return {Boolean} True if the tilemap is ready
      */
-    Tilemap.prototype.isReady = function() {
+    isReady() {
         for (var i = 0; i < this.bitmaps.length; i++) {
             if (this.bitmaps[i] && !this.bitmaps[i].isReady()) {
                 return false;
             }
         }
         return true;
-    };
+    }
 
     /**
      * Updates the tilemap for each frame.
      *
      * @method update
      */
-    Tilemap.prototype.update = function() {
+    update() {
         this.animationCount++;
         this.animationFrame = Math.floor(this.animationCount / 30);
         this.children.forEach(function(child) {
@@ -294,14 +279,14 @@ function requireRpgMaker() {
                 child.update();
             }
         });
-    };
+    }
 
     /**
      * Forces to repaint the entire tilemap.
      *
      * @method refresh
      */
-    Tilemap.prototype.refresh = function() {
+    refresh() {
         this._needsRepaint = true;
         this._lastTiles.length = 0;
     };
@@ -310,7 +295,7 @@ function requireRpgMaker() {
      * @method updateTransform
      * @private
      */
-    Tilemap.prototype.updateTransform = function() {
+    updateTransform() {
         var ox = Math.floor(this.origin.x);
         var oy = Math.floor(this.origin.y);
         var startX = Math.floor((ox - this._margin) / this._tileWidth);
@@ -333,7 +318,7 @@ function requireRpgMaker() {
      * @method _createLayers
      * @private
      */
-    Tilemap.prototype._createLayers = function() {
+    _createLayers () {
         var width = this._width;
         var height = this._height;
         var margin = this._margin;
@@ -383,7 +368,7 @@ function requireRpgMaker() {
      * @param {Number} startY
      * @private
      */
-    Tilemap.prototype._updateLayerPositions = function(startX, startY) {
+    _updateLayerPositions(startX, startY) {
         var m = this._margin;
         var ox = Math.floor(this.origin.x);
         var oy = Math.floor(this.origin.y);
@@ -418,7 +403,7 @@ function requireRpgMaker() {
      * @param {Number} startY
      * @private
      */
-    Tilemap.prototype._paintAllTiles = function(startX, startY) {
+    _paintAllTiles(startX, startY) {
         var tileCols = Math.ceil(this._width / this._tileWidth) + 1;
         var tileRows = Math.ceil(this._height / this._tileHeight) + 1;
         for (var y = 0; y < tileRows; y++) {
@@ -426,10 +411,10 @@ function requireRpgMaker() {
                 this._paintTiles(startX, startY, x, y);
             }
         }
-    };
+    }
 
-    Tilemap.prototype._tempLowerTiles = [];
-    Tilemap.prototype._tempUpperTiles = [];
+    _tempLowerTiles = [];
+    _tempUpperTiles = [];
 
     /**
      * @method _paintTiles
@@ -439,7 +424,7 @@ function requireRpgMaker() {
      * @param {Number} y
      * @private
      */
-    Tilemap.prototype._paintTiles = function(startX, startY, x, y) {
+    _paintTiles(startX, startY, x, y) {
         var tableEdgeVirtualId = 10000;
         var mx = startX + x;
         var my = startY + y;
@@ -518,7 +503,7 @@ function requireRpgMaker() {
             }
             this._writeLastTiles(1, lx, ly, upperTiles);
         }
-    };
+    }
 
     /**
      * @method _readLastTiles
@@ -527,7 +512,7 @@ function requireRpgMaker() {
      * @param {Number} y
      * @private
      */
-    Tilemap.prototype._readLastTiles = function(i, x, y) {
+    _readLastTiles(i, x, y) {
         var array1 = this._lastTiles[i];
         if (array1) {
             var array2 = array1[y];
@@ -539,7 +524,7 @@ function requireRpgMaker() {
             }
         }
         return [];
-    };
+    }
 
     /**
      * @method _writeLastTiles
@@ -549,7 +534,7 @@ function requireRpgMaker() {
      * @param {Array} tiles
      * @private
      */
-    Tilemap.prototype._writeLastTiles = function(i, x, y, tiles) {
+    _writeLastTiles(i, x, y, tiles) {
         var array1 = this._lastTiles[i];
         if (!array1) {
             array1 = this._lastTiles[i] = [];
@@ -565,7 +550,7 @@ function requireRpgMaker() {
         while (array3.length>0) array3.pop();
         for (var i= 0,n=tiles.length;i<n;i++)
             array3.push(tiles[i]);
-    };
+    }
 
     /**
      * @method _drawTile
@@ -575,7 +560,7 @@ function requireRpgMaker() {
      * @param {Number} dy
      * @private
      */
-    Tilemap.prototype._drawTile = function(bitmap, tileId, dx, dy) {
+    _drawTile(bitmap, tileId, dx, dy) {
         if (Tilemap.isVisibleTile(tileId)) {
             if (Tilemap.isAutotile(tileId)) {
                 this._drawAutotile(bitmap, tileId, dx, dy);
@@ -583,7 +568,7 @@ function requireRpgMaker() {
                 this._drawNormalTile(bitmap, tileId, dx, dy);
             }
         }
-    };
+    }
 
     /**
      * @method _drawNormalTile
@@ -593,7 +578,7 @@ function requireRpgMaker() {
      * @param {Number} dy
      * @private
      */
-    Tilemap.prototype._drawNormalTile = function(bitmap, tileId, dx, dy) {
+    _drawNormalTile (bitmap, tileId, dx, dy) {
         var setNumber = 0;
 
         if (Tilemap.isTileA5(tileId)) {
@@ -611,7 +596,7 @@ function requireRpgMaker() {
         if (source) {
             bitmap.blt(source, sx, sy, w, h, dx, dy, w, h);
         }
-    };
+    }
 
     /**
      * @method _drawAutotile
@@ -621,7 +606,7 @@ function requireRpgMaker() {
      * @param {Number} dy
      * @private
      */
-    Tilemap.prototype._drawAutotile = function(bitmap, tileId, dx, dy) {
+    _drawAutotile (bitmap, tileId, dx, dy) {
         var autotileTable = Tilemap.FLOOR_AUTOTILE_TABLE;
         var kind = Tilemap.getAutotileKind(tileId);
         var shape = Tilemap.getAutotileShape(tileId);
@@ -707,7 +692,7 @@ function requireRpgMaker() {
                 }
             }
         }
-    };
+    }
 
     /**
      * @method _drawTableEdge
@@ -717,7 +702,7 @@ function requireRpgMaker() {
      * @param {Number} dy
      * @private
      */
-    Tilemap.prototype._drawTableEdge = function(bitmap, tileId, dx, dy) {
+    _drawTableEdge (bitmap, tileId, dx, dy) {
         if (Tilemap.isTileA2(tileId)) {
             var autotileTable = Tilemap.FLOOR_AUTOTILE_TABLE;
             var kind = Tilemap.getAutotileKind(tileId);
@@ -744,7 +729,7 @@ function requireRpgMaker() {
                 }
             }
         }
-    };
+    }
 
     /**
      * @method _drawShadow
@@ -754,7 +739,7 @@ function requireRpgMaker() {
      * @param {Number} dy
      * @private
      */
-    Tilemap.prototype._drawShadow = function(bitmap, shadowBits, dx, dy) {
+    _drawShadow (bitmap, shadowBits, dx, dy) {
         if (shadowBits & 0x0f) {
             var w1 = this._tileWidth / 2;
             var h1 = this._tileHeight / 2;
@@ -767,7 +752,7 @@ function requireRpgMaker() {
                 }
             }
         }
-    };
+    }
 
     /**
      * @method _readMapData
@@ -777,7 +762,7 @@ function requireRpgMaker() {
      * @return {Number}
      * @private
      */
-    Tilemap.prototype._readMapData = function(x, y, z) {
+    _readMapData (x, y, z) {
         if (this._mapData) {
             var width = this._mapWidth;
             var height = this._mapHeight;
@@ -795,7 +780,7 @@ function requireRpgMaker() {
         } else {
             return 0;
         }
-    };
+    }
 
     /**
      * @method _isHigherTile
@@ -803,9 +788,9 @@ function requireRpgMaker() {
      * @return {Boolean}
      * @private
      */
-    Tilemap.prototype._isHigherTile = function(tileId) {
+    _isHigherTile (tileId) {
         return this.flags[tileId] & 0x10;
-    };
+    }
 
     /**
      * @method _isTableTile
@@ -813,9 +798,9 @@ function requireRpgMaker() {
      * @return {Boolean}
      * @private
      */
-    Tilemap.prototype._isTableTile = function(tileId) {
+    _isTableTile (tileId) {
         return Tilemap.isTileA2(tileId) && (this.flags[tileId] & 0x80);
-    };
+    }
 
     /**
      * @method _isOverpassPosition
@@ -824,17 +809,17 @@ function requireRpgMaker() {
      * @return {Boolean}
      * @private
      */
-    Tilemap.prototype._isOverpassPosition = function(mx, my) {
+    _isOverpassPosition (mx, my) {
         return false;
-    };
+    }
 
     /**
      * @method _sortChildren
      * @private
      */
-    Tilemap.prototype._sortChildren = function() {
-        this.children.sort(this._compareChildOrder.bind(this));
-    };
+    _sortChildren () {
+        //this.children.sort(this._compareChildOrder().bind(this));
+    }
 
     /**
      * @method _compareChildOrder
@@ -842,7 +827,7 @@ function requireRpgMaker() {
      * @param {Object} b
      * @private
      */
-    Tilemap.prototype._compareChildOrder = function(a, b) {
+    _compareChildOrder (a, b) {
         if (a.z !== b.z) {
             return a.z - b.z;
         } else if (a.y !== b.y) {
@@ -850,182 +835,182 @@ function requireRpgMaker() {
         } else {
             return a.spriteId - b.spriteId;
         }
-    };
+    }
 
-// Tile type checkers
+    // Tile type checkers
 
-    Tilemap.TILE_ID_B      = 0;
-    Tilemap.TILE_ID_C      = 256;
-    Tilemap.TILE_ID_D      = 512;
-    Tilemap.TILE_ID_E      = 768;
-    Tilemap.TILE_ID_A5     = 1536;
-    Tilemap.TILE_ID_A1     = 2048;
-    Tilemap.TILE_ID_A2     = 2816;
-    Tilemap.TILE_ID_A3     = 4352;
-    Tilemap.TILE_ID_A4     = 5888;
-    Tilemap.TILE_ID_MAX    = 8192;
+    static TILE_ID_B      = 0;
+    static TILE_ID_C      = 256;
+    static TILE_ID_D      = 512;
+    static TILE_ID_E      = 768;
+    static TILE_ID_A5     = 1536;
+    static TILE_ID_A1     = 2048;
+    static TILE_ID_A2     = 2816;
+    static TILE_ID_A3     = 4352;
+    static TILE_ID_A4     = 5888;
+    static TILE_ID_MAX    = 8192;
 
-    Tilemap.isVisibleTile = function(tileId) {
+    static isVisibleTile(tileId) {
         return tileId > 0 && tileId < this.TILE_ID_MAX;
-    };
+    }
 
-    Tilemap.isAutotile = function(tileId) {
+    static isAutotile(tileId) {
         return tileId >= this.TILE_ID_A1;
-    };
+    }
 
-    Tilemap.getAutotileKind = function(tileId) {
+    static getAutotileKind (tileId) {
         return Math.floor((tileId - this.TILE_ID_A1) / 48);
-    };
+    }
 
-    Tilemap.getAutotileShape = function(tileId) {
+    static getAutotileShape (tileId) {
         return (tileId - this.TILE_ID_A1) % 48;
-    };
+    }
 
-    Tilemap.makeAutotileId = function(kind, shape) {
+    static makeAutotileId (kind, shape) {
         return this.TILE_ID_A1 + kind * 48 + shape;
-    };
+    }
 
-    Tilemap.isSameKindTile = function(tileID1, tileID2) {
+    static isSameKindTile (tileID1, tileID2) {
         if (this.isAutotile(tileID1) && this.isAutotile(tileID2)) {
             return this.getAutotileKind(tileID1) === this.getAutotileKind(tileID2);
         } else {
             return tileID1 === tileID2;
         }
-    };
+    }
 
-    Tilemap.isTileA1 = function(tileId) {
+    static isTileA1 (tileId) {
         return tileId >= this.TILE_ID_A1 && tileId < this.TILE_ID_A2;
     };
 
-    Tilemap.isTileA2 = function(tileId) {
+    static isTileA2 (tileId) {
         return tileId >= this.TILE_ID_A2 && tileId < this.TILE_ID_A3;
-    };
+    }
 
-    Tilemap.isTileA3 = function(tileId) {
+    static isTileA3 (tileId) {
         return tileId >= this.TILE_ID_A3 && tileId < this.TILE_ID_A4;
-    };
+    }
 
-    Tilemap.isTileA4 = function(tileId) {
+    static isTileA4 (tileId) {
         return tileId >= this.TILE_ID_A4 && tileId < this.TILE_ID_MAX;
-    };
+    }
 
-    Tilemap.isTileA5 = function(tileId) {
+    static isTileA5 (tileId) {
         return tileId >= this.TILE_ID_A5 && tileId < this.TILE_ID_A1;
-    };
+    }
 
-    Tilemap.isWaterTile = function(tileId) {
+    static isWaterTile (tileId) {
         if (this.isTileA1(tileId)) {
             return !(tileId >= this.TILE_ID_A1 + 96 && tileId < this.TILE_ID_A1 + 192);
         } else {
             return false;
         }
-    };
+    }
 
-    Tilemap.isWaterfallTile = function(tileId) {
+    static isWaterfallTile (tileId) {
         if (tileId >= this.TILE_ID_A1 + 192 && tileId < this.TILE_ID_A2) {
             return this.getAutotileKind(tileId) % 2 === 1;
         } else {
             return false;
         }
-    };
+    }
 
-    Tilemap.isGroundTile = function(tileId) {
+    static isGroundTile (tileId) {
         return this.isTileA1(tileId) || this.isTileA2(tileId) || this.isTileA5(tileId);
-    };
+    }
 
-    Tilemap.isShadowingTile = function(tileId) {
+    static isShadowingTile (tileId) {
         return this.isTileA3(tileId) || this.isTileA4(tileId);
-    };
+    }
 
-    Tilemap.isRoofTile = function(tileId) {
+    static isRoofTile (tileId) {
         return this.isTileA3(tileId) && this.getAutotileKind(tileId) % 16 < 8;
     };
 
-    Tilemap.isWallTopTile = function(tileId) {
+    static isWallTopTile (tileId) {
         return this.isTileA4(tileId) && this.getAutotileKind(tileId) % 16 < 8;
-    };
+    }
 
-    Tilemap.isWallSideTile = function(tileId) {
+    static isWallSideTile (tileId) {
         return (this.isTileA3(tileId) || this.isTileA4(tileId)) &&
             getAutotileKind(tileId) % 16 >= 8;
-    };
+    }
 
-    Tilemap.isWallTile = function(tileId) {
+    static isWallTile (tileId) {
         return this.isWallTopTile(tileId) || this.isWallSideTile(tileId);
-    };
+    }
 
-    Tilemap.isFloorTypeAutotile = function(tileId) {
+    static isFloorTypeAutotile (tileId) {
         return (this.isTileA1(tileId) && !this.isWaterfallTile(tileId)) ||
             this.isTileA2(tileId) || this.isWallTopTile(tileId);
-    };
+    }
 
-    Tilemap.isWallTypeAutotile = function(tileId) {
+    static isWallTypeAutotile (tileId) {
         return this.isRoofTile(tileId) || this.isWallSideTile(tileId);
-    };
+    }
 
-    Tilemap.isWaterfallTypeAutotile = function(tileId) {
+    static isWaterfallTypeAutotile (tileId) {
         return this.isWaterfallTile(tileId);
-    };
+    }
 
-// Autotile shape number to coordinates of tileset images
+        // Autotile shape number to coordinates of tileset images
+        static FLOOR_AUTOTILE_TABLE = [
+            [[2,4],[1,4],[2,3],[1,3]],[[2,0],[1,4],[2,3],[1,3]],
+            [[2,4],[3,0],[2,3],[1,3]],[[2,0],[3,0],[2,3],[1,3]],
+            [[2,4],[1,4],[2,3],[3,1]],[[2,0],[1,4],[2,3],[3,1]],
+            [[2,4],[3,0],[2,3],[3,1]],[[2,0],[3,0],[2,3],[3,1]],
+            [[2,4],[1,4],[2,1],[1,3]],[[2,0],[1,4],[2,1],[1,3]],
+            [[2,4],[3,0],[2,1],[1,3]],[[2,0],[3,0],[2,1],[1,3]],
+            [[2,4],[1,4],[2,1],[3,1]],[[2,0],[1,4],[2,1],[3,1]],
+            [[2,4],[3,0],[2,1],[3,1]],[[2,0],[3,0],[2,1],[3,1]],
+            [[0,4],[1,4],[0,3],[1,3]],[[0,4],[3,0],[0,3],[1,3]],
+            [[0,4],[1,4],[0,3],[3,1]],[[0,4],[3,0],[0,3],[3,1]],
+            [[2,2],[1,2],[2,3],[1,3]],[[2,2],[1,2],[2,3],[3,1]],
+            [[2,2],[1,2],[2,1],[1,3]],[[2,2],[1,2],[2,1],[3,1]],
+            [[2,4],[3,4],[2,3],[3,3]],[[2,4],[3,4],[2,1],[3,3]],
+            [[2,0],[3,4],[2,3],[3,3]],[[2,0],[3,4],[2,1],[3,3]],
+            [[2,4],[1,4],[2,5],[1,5]],[[2,0],[1,4],[2,5],[1,5]],
+            [[2,4],[3,0],[2,5],[1,5]],[[2,0],[3,0],[2,5],[1,5]],
+            [[0,4],[3,4],[0,3],[3,3]],[[2,2],[1,2],[2,5],[1,5]],
+            [[0,2],[1,2],[0,3],[1,3]],[[0,2],[1,2],[0,3],[3,1]],
+            [[2,2],[3,2],[2,3],[3,3]],[[2,2],[3,2],[2,1],[3,3]],
+            [[2,4],[3,4],[2,5],[3,5]],[[2,0],[3,4],[2,5],[3,5]],
+            [[0,4],[1,4],[0,5],[1,5]],[[0,4],[3,0],[0,5],[1,5]],
+            [[0,2],[3,2],[0,3],[3,3]],[[0,2],[1,2],[0,5],[1,5]],
+            [[0,4],[3,4],[0,5],[3,5]],[[2,2],[3,2],[2,5],[3,5]],
+            [[0,2],[3,2],[0,5],[3,5]],[[0,0],[1,0],[0,1],[1,1]]
+        ];
 
-    Tilemap.FLOOR_AUTOTILE_TABLE = [
-        [[2,4],[1,4],[2,3],[1,3]],[[2,0],[1,4],[2,3],[1,3]],
-        [[2,4],[3,0],[2,3],[1,3]],[[2,0],[3,0],[2,3],[1,3]],
-        [[2,4],[1,4],[2,3],[3,1]],[[2,0],[1,4],[2,3],[3,1]],
-        [[2,4],[3,0],[2,3],[3,1]],[[2,0],[3,0],[2,3],[3,1]],
-        [[2,4],[1,4],[2,1],[1,3]],[[2,0],[1,4],[2,1],[1,3]],
-        [[2,4],[3,0],[2,1],[1,3]],[[2,0],[3,0],[2,1],[1,3]],
-        [[2,4],[1,4],[2,1],[3,1]],[[2,0],[1,4],[2,1],[3,1]],
-        [[2,4],[3,0],[2,1],[3,1]],[[2,0],[3,0],[2,1],[3,1]],
-        [[0,4],[1,4],[0,3],[1,3]],[[0,4],[3,0],[0,3],[1,3]],
-        [[0,4],[1,4],[0,3],[3,1]],[[0,4],[3,0],[0,3],[3,1]],
-        [[2,2],[1,2],[2,3],[1,3]],[[2,2],[1,2],[2,3],[3,1]],
-        [[2,2],[1,2],[2,1],[1,3]],[[2,2],[1,2],[2,1],[3,1]],
-        [[2,4],[3,4],[2,3],[3,3]],[[2,4],[3,4],[2,1],[3,3]],
-        [[2,0],[3,4],[2,3],[3,3]],[[2,0],[3,4],[2,1],[3,3]],
-        [[2,4],[1,4],[2,5],[1,5]],[[2,0],[1,4],[2,5],[1,5]],
-        [[2,4],[3,0],[2,5],[1,5]],[[2,0],[3,0],[2,5],[1,5]],
-        [[0,4],[3,4],[0,3],[3,3]],[[2,2],[1,2],[2,5],[1,5]],
-        [[0,2],[1,2],[0,3],[1,3]],[[0,2],[1,2],[0,3],[3,1]],
-        [[2,2],[3,2],[2,3],[3,3]],[[2,2],[3,2],[2,1],[3,3]],
-        [[2,4],[3,4],[2,5],[3,5]],[[2,0],[3,4],[2,5],[3,5]],
-        [[0,4],[1,4],[0,5],[1,5]],[[0,4],[3,0],[0,5],[1,5]],
-        [[0,2],[3,2],[0,3],[3,3]],[[0,2],[1,2],[0,5],[1,5]],
-        [[0,4],[3,4],[0,5],[3,5]],[[2,2],[3,2],[2,5],[3,5]],
-        [[0,2],[3,2],[0,5],[3,5]],[[0,0],[1,0],[0,1],[1,1]]
-    ];
+        static WALL_AUTOTILE_TABLE = [
+            [[2,2],[1,2],[2,1],[1,1]],[[0,2],[1,2],[0,1],[1,1]],
+            [[2,0],[1,0],[2,1],[1,1]],[[0,0],[1,0],[0,1],[1,1]],
+            [[2,2],[3,2],[2,1],[3,1]],[[0,2],[3,2],[0,1],[3,1]],
+            [[2,0],[3,0],[2,1],[3,1]],[[0,0],[3,0],[0,1],[3,1]],
+            [[2,2],[1,2],[2,3],[1,3]],[[0,2],[1,2],[0,3],[1,3]],
+            [[2,0],[1,0],[2,3],[1,3]],[[0,0],[1,0],[0,3],[1,3]],
+            [[2,2],[3,2],[2,3],[3,3]],[[0,2],[3,2],[0,3],[3,3]],
+            [[2,0],[3,0],[2,3],[3,3]],[[0,0],[3,0],[0,3],[3,3]]
+        ];
 
-    Tilemap.WALL_AUTOTILE_TABLE = [
-        [[2,2],[1,2],[2,1],[1,1]],[[0,2],[1,2],[0,1],[1,1]],
-        [[2,0],[1,0],[2,1],[1,1]],[[0,0],[1,0],[0,1],[1,1]],
-        [[2,2],[3,2],[2,1],[3,1]],[[0,2],[3,2],[0,1],[3,1]],
-        [[2,0],[3,0],[2,1],[3,1]],[[0,0],[3,0],[0,1],[3,1]],
-        [[2,2],[1,2],[2,3],[1,3]],[[0,2],[1,2],[0,3],[1,3]],
-        [[2,0],[1,0],[2,3],[1,3]],[[0,0],[1,0],[0,3],[1,3]],
-        [[2,2],[3,2],[2,3],[3,3]],[[0,2],[3,2],[0,3],[3,3]],
-        [[2,0],[3,0],[2,3],[3,3]],[[0,0],[3,0],[0,3],[3,3]]
-    ];
-
-    Tilemap.WATERFALL_AUTOTILE_TABLE = [
-        [[2,0],[1,0],[2,1],[1,1]],[[0,0],[1,0],[0,1],[1,1]],
-        [[2,0],[3,0],[2,1],[3,1]],[[0,0],[3,0],[0,1],[3,1]]
-    ];
+        static WATERFALL_AUTOTILE_TABLE = [
+            [[2,0],[1,0],[2,1],[1,1]],[[0,0],[1,0],[0,1],[1,1]],
+            [[2,0],[3,0],[2,1],[3,1]],[[0,0],[3,0],[0,1],[3,1]]
+        ];
+    }
 
     //-----------------------------------------------------------------------------
+
+    class ShaderTilemap extends Tilemap {
+
     /**
      * The tilemap which displays 2D tile-based game map using shaders
      *
      * @class Tilemap
      * @constructor
      */
-    function ShaderTilemap() {
-        Tilemap.apply(this, arguments);
+    constructor() {
+        super();
         this.roundPixels = true;
-    };
-
-    ShaderTilemap.prototype = Object.create(Tilemap.prototype);
-    ShaderTilemap.prototype.constructor = ShaderTilemap;
+    }
 
     /**
      * Uploads animation state in renderer
@@ -1033,13 +1018,13 @@ function requireRpgMaker() {
      * @method _hackRenderer
      * @private
      */
-    ShaderTilemap.prototype._hackRenderer = function(renderer) {
+    _hackRenderer(renderer) {
         var af = this.animationFrame % 4;
         if (af==3) af = 1;
         renderer.plugins.tilemap.tileAnim[0] = af * this._tileWidth;
         renderer.plugins.tilemap.tileAnim[1] = (this.animationFrame % 3) * this._tileHeight;
         return renderer;
-    };
+    }
 
     /**
      * PIXI render method
@@ -1047,10 +1032,11 @@ function requireRpgMaker() {
      * @method renderCanvas
      * @param {Object} pixi renderer
      */
-    ShaderTilemap.prototype.renderCanvas = function(renderer) {
+    renderCanvas(renderer) {
         this._hackRenderer(renderer);
-        PIXI.Container.prototype.renderCanvas.call(this, renderer);
-    };
+        //PIXI.Container.prototype.renderCanvas.call(this, renderer);
+        super.renderCanvas(renderer);
+    }
 
 
     /**
@@ -1059,23 +1045,24 @@ function requireRpgMaker() {
      * @method render
      * @param {Object} pixi renderer
      */
-    ShaderTilemap.prototype.render = function(renderer) {
+    render(renderer) {
         this._hackRenderer(renderer);
-        PIXI.Container.prototype.render.call(this, renderer);
-    };
+        //PIXI.Container.prototype.render.call(this, renderer);
+        super.render(renderer);
+    }
 
     /**
      * Forces to repaint the entire tilemap AND update bitmaps list if needed
      *
      * @method refresh
      */
-    ShaderTilemap.prototype.refresh = function() {
+    refresh() {
         if (this._lastBitmapLength != this.bitmaps.length) {
             this._lastBitmapLength = this.bitmaps.length;
             this._updateBitmaps();
-        };
+        }
         this._needsRepaint = true;
-    };
+    }
 
     /**
      * Updates bitmaps list
@@ -1083,17 +1070,17 @@ function requireRpgMaker() {
      * @method refresh
      * @private
      */
-    ShaderTilemap.prototype._updateBitmaps = function() {
+    _updateBitmaps() {
         var bitmaps = this.bitmaps.map(function(x) { return x._baseTexture ? new PIXI.Texture(x._baseTexture) : x; } );
         this.lowerLayer.setBitmaps(bitmaps);
         this.upperLayer.setBitmaps(bitmaps);
-    };
+    }
 
     /**
      * @method updateTransform
      * @private
      */
-    ShaderTilemap.prototype.updateTransform = function() {
+    updateTransform () {
         if (this.roundPixels) {
             var ox = Math.floor(this.origin.x);
             var oy = Math.floor(this.origin.y);
@@ -1112,14 +1099,14 @@ function requireRpgMaker() {
             this._needsRepaint = false;
         }
         this._sortChildren();
-        PIXI.Container.prototype.updateTransform.call(this);
-    };
+        super.updateTransform();
+    }
 
     /**
      * @method _createLayers
      * @private
      */
-    ShaderTilemap.prototype._createLayers = function() {
+    _createLayers() {
         var width = this._width;
         var height = this._height;
         var margin = this._margin;
@@ -1141,7 +1128,7 @@ function requireRpgMaker() {
             this.lowerLayer.shadowColor = new Float32Array([0.0, 0.0, 0.0, 0.5]);
             this.upperZLayer.addChild(this.upperLayer = new PIXI.tilemap.CompositeRectTileLayer(4, [], useSquareShader));
         }
-    };
+    }
 
     /**
      * @method _updateLayerPositions
@@ -1149,7 +1136,7 @@ function requireRpgMaker() {
      * @param {Number} startY
      * @private
      */
-    ShaderTilemap.prototype._updateLayerPositions = function(startX, startY) {
+    _updateLayerPositions(startX, startY) {
         if (this.roundPixels) {
             var ox = Math.floor(this.origin.x);
             var oy = Math.floor(this.origin.y);
@@ -1161,7 +1148,7 @@ function requireRpgMaker() {
         this.lowerZLayer.position.y = startY * this._tileHeight - oy;
         this.upperZLayer.position.x = startX * this._tileWidth - ox;
         this.upperZLayer.position.y = startY * this._tileHeight - oy;
-    };
+    }
 
     /**
      * @method _paintAllTiles
@@ -1169,7 +1156,7 @@ function requireRpgMaker() {
      * @param {Number} startY
      * @private
      */
-    ShaderTilemap.prototype._paintAllTiles = function(startX, startY) {
+    _paintAllTiles (startX, startY) {
         this.lowerZLayer.clear();
         this.upperZLayer.clear();
         var tileCols = Math.ceil(this._width / this._tileWidth) + 1;
@@ -1179,7 +1166,7 @@ function requireRpgMaker() {
                 this._paintTiles(startX, startY, x, y);
             }
         }
-    };
+    }
 
     /**
      * @method _paintTiles
@@ -1189,7 +1176,8 @@ function requireRpgMaker() {
      * @param {Number} y
      * @private
      */
-    ShaderTilemap.prototype._paintTiles = function(startX, startY, x, y) {
+    _paintTiles(startX, startY, x, y) {
+        //console.log("painting here");
         var mx = startX + x;
         var my = startY + y;
         var dx = x * this._tileWidth, dy = y * this._tileHeight;
@@ -1199,8 +1187,10 @@ function requireRpgMaker() {
         var tileId3 = this._readMapData(mx, my, 3);
         var shadowBits = this._readMapData(mx, my, 4);
         var upperTileId1 = this._readMapData(mx, my - 1, 1);
-        var lowerLayer = this.lowerLayer.children[0];
-        var upperLayer = this.upperLayer.children[0];
+        //console.log(this.lowerLayer);
+        // TO-DO
+        var lowerLayer = this.lowerLayer;//.children[0];
+        var upperLayer = this.upperLayer;//.children[0];
 
         if (this._isHigherTile(tileId0)) {
             this._drawTile(upperLayer, tileId0, dx, dy);
@@ -1235,7 +1225,7 @@ function requireRpgMaker() {
                 this._drawTile(lowerLayer, tileId3, dx, dy);
             }
         }
-    };
+    }
 
     /**
      * @method _drawTile
@@ -1245,7 +1235,7 @@ function requireRpgMaker() {
      * @param {Number} dy
      * @private
      */
-    ShaderTilemap.prototype._drawTile = function(layer, tileId, dx, dy) {
+    _drawTile (layer, tileId, dx, dy) {
         if (Tilemap.isVisibleTile(tileId)) {
             if (Tilemap.isAutotile(tileId)) {
                 this._drawAutotile(layer, tileId, dx, dy);
@@ -1253,7 +1243,7 @@ function requireRpgMaker() {
                 this._drawNormalTile(layer, tileId, dx, dy);
             }
         }
-    };
+    }
 
     /**
      * @method _drawNormalTile
@@ -1263,7 +1253,7 @@ function requireRpgMaker() {
      * @param {Number} dy
      * @private
      */
-    ShaderTilemap.prototype._drawNormalTile = function(layer, tileId, dx, dy) {
+    _drawNormalTile (layer, tileId, dx, dy) {
         var setNumber = 0;
 
         if (Tilemap.isTileA5(tileId)) {
@@ -1278,7 +1268,7 @@ function requireRpgMaker() {
         var sy = (Math.floor(tileId % 256 / 8) % 16) * h;
 
         layer.addRect(setNumber, sx, sy, dx, dy, w, h);
-    };
+    }
 
     /**
      * @method _drawAutotile
@@ -1288,7 +1278,7 @@ function requireRpgMaker() {
      * @param {Number} dy
      * @private
      */
-    ShaderTilemap.prototype._drawAutotile = function(layer, tileId, dx, dy) {
+    _drawAutotile(layer, tileId, dx, dy) {
         var autotileTable = Tilemap.FLOOR_AUTOTILE_TABLE;
         var kind = Tilemap.getAutotileKind(tileId);
         var shape = Tilemap.getAutotileShape(tileId);
@@ -1370,7 +1360,7 @@ function requireRpgMaker() {
                 layer.addRect(setNumber, sx1, sy1, dx1, dy1, w1, h1, animX, animY);
             }
         }
-    };
+    }
 
     /**
      * @method _drawTableEdge
@@ -1380,7 +1370,7 @@ function requireRpgMaker() {
      * @param {Number} dy
      * @private
      */
-    ShaderTilemap.prototype._drawTableEdge = function(layer, tileId, dx, dy) {
+    _drawTableEdge (layer, tileId, dx, dy) {
         if (Tilemap.isTileA2(tileId)) {
             var autotileTable = Tilemap.FLOOR_AUTOTILE_TABLE;
             var kind = Tilemap.getAutotileKind(tileId);
@@ -1403,7 +1393,7 @@ function requireRpgMaker() {
                 layer.addRect(setNumber, sx1, sy1, dx1, dy1, w1, h1/2);
             }
         }
-    };
+    }
 
     /**
      * @method _drawShadow
@@ -1412,7 +1402,7 @@ function requireRpgMaker() {
      * @param {Number} dy
      * @private
      */
-    ShaderTilemap.prototype._drawShadow = function(layer, shadowBits, dx, dy) {
+    _drawShadow (layer, shadowBits, dx, dy) {
         if (shadowBits & 0x0f) {
             var w1 = this._tileWidth / 2;
             var h1 = this._tileHeight / 2;
@@ -1424,7 +1414,8 @@ function requireRpgMaker() {
                 }
             }
         }
-    };
+    }
+    }
 
     function LevelLoader() {
         this.initialize.apply(this, arguments);
@@ -1434,52 +1425,49 @@ function requireRpgMaker() {
         initialize: function() {
 
         },
-        load : function(name, cb) {
+        load : async function(name, cb) {
             var tilesets = null;
             var tileset = null;
             var tilesetNames = null;
             var map = null;
-            var loader = new PIXI.Loader();
-            var self = this;
-            function progress(loader, resource) {
-                if (resource.name == 'tilesets') {
-                    //1. load the map
-                    loader.add(name, 'rpgmaker/data/'+name+'.json', {parentResource: resource });
-                    self.tilesetResource = resource;
-                    tilesets = resource.data;
-                } else
-                if (resource.name == name) {
-                    //2. load spritesheets
-                    map = resource.data;
-                    tileset = tilesets[map['tilesetId']];
-                    tilesetNames = tileset['tilesetNames'];
-                    tilesetNames.forEach(function(name) {
-                        if (name.length>0 && !PIXI.utils.TextureCache[name])
-                            loader.add(name, 'rpgmaker/img/'+name +".png", {parentResource: resource });
-                    })
-                }
-            }
-            loader.onProgress.add(progress);
             //0. load tilesets
-            if (this.tilesetResource)
-                progress(loader, self.tilesetResource);
-            else
-                loader.add('tilesets', 'rpgmaker/data/Tilesets.json');
-            loader.load(function(loader, resources) {
-                var result = new ShaderTilemap(300, 300);
-                for (var i=0;i<tilesetNames.length;i++) {
-                    var tex = resources[tilesetNames[i]] && resources[tilesetNames[i]].texture;
-                    result.bitmaps.push(tex);
-                    if (tex) tex.baseTexture.mipmap = true;
-                }
-                while (result.bitmaps.length>0 && !result.bitmaps[result.bitmaps.length-1]) {
-                    result.bitmaps.pop();
-                }
-                result.flags = tileset.flags;
-                result.setData(map.width, map.height, map.data);
-                result.refresh();
-                cb(null, result);
-            })
+            if(this.tilesetResource) {
+                tilesets = this.tilesetResource.data;
+            } else {
+                PIXI.Assets.add('tilesets', 'rpgmaker/data/Tilesets.json');
+                const resource = await PIXI.Assets.load('tilesets');
+                this.tilesetResource = resource;
+                tilesets = resource;
+            }
+            //1. load the map
+            PIXI.Assets.add(name, 'rpgmaker/data/'+name+'.json');
+            const resource = await PIXI.Assets.load(name);
+            const spritesheets = [];
+            //2. load spritesheets
+            map = resource;
+            tileset = tilesets[map['tilesetId']];
+            tilesetNames = tileset['tilesetNames'];
+            tilesetNames.forEach(function(name) {
+                if (name.length>0 && !PIXI.utils.TextureCache[name])
+                spritesheets.push(name);
+                PIXI.Assets.add(name, 'rpgmaker/img/'+name +".png");
+            })            
+
+            const resources = await PIXI.Assets.load(spritesheets);
+
+            var result = new ShaderTilemap(300, 300);
+            for (var i=0;i<tilesetNames.length;i++) {
+                var tex = resources[tilesetNames[i]] && resources[tilesetNames[i]].texture;
+                result.bitmaps.push(tex);
+                if (tex) tex.baseTexture.mipmap = true;
+            }
+            while (result.bitmaps.length>0 && !result.bitmaps[result.bitmaps.length-1]) {
+                result.bitmaps.pop();
+            }
+            result.flags = tileset.flags;
+            result.setData(map.width, map.height, map.data);
+            result.refresh();
+            cb(null, result);
         }
     };
 
