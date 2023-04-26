@@ -7,7 +7,6 @@
     "Ivan Popelyshev <ivan.popelyshev@gmail.com>",
     "Shukant Pal <shukant@pixijs.io>"
   ],
-  "type": "module",
   "exports": {
     ".": {
       "import": "./dist/pixi-tilemap.es.js",
