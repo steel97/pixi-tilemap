@@ -10,7 +10,10 @@
   "type": "module",
   "exports": {
     ".": {
-      "import": "./dist/pixi-tilemap.es.js",
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/pixi-tilemap.es.js"
+      },
       "require": "./dist/pixi-tilemap.umd.js"
     }
   },
