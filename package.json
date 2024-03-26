@@ -1,5 +1,5 @@
 {
-  "name": "@pixi/tilemap",
+  "name": "@steel97/tilemap",
   "version": "5.0.0",
   "description": "A low-level, optimized rectangular tilemap implementation for PixiJS.",
   "author": "Ivan Popelyshev",
